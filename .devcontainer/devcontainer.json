@@ -1,0 +1,31 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "hostRequirements": {
+    "cpus": 4
+  },
+  "waitFor": "onCreateCommand",
+  "updateContentCommand": "bundle install",
+  "postCreateCommand": "rails db:migrate db:seed",
+  "postAttachCommand": {
+    "server": "rails server"
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "app/controllers/movies_controller.rb"
+      ]
+    },
+    "vscode": {
+      "extensions": [
+        "rebornix.Ruby"
+      ]
+    }
+  },
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "forwardPorts": [3000]
+}
