@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_03_183443) do
+ActiveRecord::Schema[7.2].define(version: 2023_07_03_183443) do
   create_table "favorite_movies", id: false, force: :cascade do |t|
     t.integer "movie_id"
     t.integer "user_id"
