@@ -5,7 +5,8 @@ Rails.application.routes.draw do
     resources :movies, only: %i[index] do
       get :recommendations, on: :collection
       get :user_rented_movies, on: :collection
-      post :rent, on: :collection
+      post :rent, on: :member
+      delete :return, on: :collection, action: :return_movie
     end
   end
 
