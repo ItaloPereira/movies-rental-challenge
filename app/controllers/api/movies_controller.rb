@@ -1,8 +1,27 @@
 module Api
   class MoviesController < ApplicationController
     def index
-      @movies = Movie.all
-      render json: @movies
+      genre = params[:genre]
+      search = params[:search]
+      page = params[:page].to_i > 0 ? params[:page].to_i : 1
+      per_page = params[:per_page].to_i > 0 ? params[:per_page].to_i : 10
+    
+      movies = Movie.all
+      movies = movies.where(genre: genre) if genre.present?
+      movies = movies.where("LOWER(title) LIKE ?", "%#{search.downcase}%") if search.present?
+    
+      total_movies = movies.count
+      movies = movies.offset((page - 1) * per_page).limit(per_page)
+    
+      render json: {
+        movies: movies,
+        pagination: {
+          current_page: page,
+          per_page: per_page,
+          total_pages: (total_movies / per_page.to_f).ceil,
+          total_movies: total_movies
+        }
+      }
     end
 
     def recommendations
@@ -28,13 +47,11 @@ module Api
     
       data = JSON.parse(request_body) rescue {}
       user_id = data["user_id"]
-      movie_id = data["movie_id"]
     
       return render json: { error: "Missing user_id" }, status: :bad_request unless user_id
-      return render json: { error: "Missing movie_id" }, status: :bad_request unless movie_id
     
       user = User.find_by(id: user_id)
-      movie = Movie.find_by(id: movie_id)
+      movie = Movie.find_by(id: params[:id])
     
       return render json: { error: "User not found" }, status: :not_found unless user
       return render json: { error: "Movie not found" }, status: :not_found unless movie
@@ -55,6 +72,33 @@ module Api
       else
         render json: { error: "No copies available" }, status: :unprocessable_entity
       end
+    end
+
+    def return_movie
+      request_body = request.body.read.presence
+      return render json: { error: "Missing request body" }, status: :bad_request unless request_body
+    
+      data = JSON.parse(request_body) rescue {}
+      user_id = data["user_id"]
+    
+      return render json: { error: "Missing user_id" }, status: :bad_request unless user_id
+      return render json: { error: "Missing movie_id" }, status: :bad_request unless params[:movie_id]
+    
+      user = User.find_by(id: user_id)
+      movie = Movie.find_by(id: params[:movie_id])
+    
+      return render json: { error: "User not found" }, status: :not_found unless user
+      return render json: { error: "Movie not found" }, status: :not_found unless movie
+    
+      unless user.rented.exists?(id: movie.id)
+        return render json: { error: "Movie not rented by the user" }, status: :unprocessable_entity
+      end
+    
+      user.rented.delete(movie)
+      movie.available_copies += 1
+      movie.save
+    
+      render json: { message: "Movie successfully returned", movie: movie }, status: :ok
     end
   end
 end
